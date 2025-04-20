@@ -11,6 +11,7 @@ import Combine
 struct PokemonModel:Identifiable {
     let id = UUID()
     let name: String
+    let jpName: String
     let image: URL
     let link: URL
     let pokemonId: String
@@ -67,7 +68,16 @@ class PokemonDataManager:ObservableObject {
         let id: Int
     }
     
-    struct PokemonDetailResponse: Codable {
+    struct PokemonSpeciesResponse: Codable {
+        let names: [LocalizaedName]
+    }
+    
+    struct LocalizaedName: Codable {
+        let name: String
+        let language: Language
+    }
+
+    struct Language: Codable {
         let name: String
     }
     
@@ -83,12 +93,17 @@ class PokemonDataManager:ObservableObject {
             let decoded = try JSONDecoder().decode(PokemonListResponse.self, from: data)
             self.allPokemonList = decoded.results.map { $0.name }.sorted()
             print("データ取得成功 \(allPokemonList.count)個")
+            
+            await showDefaultPokemons()
         } catch {
             print("データ取得失敗: \(error.localizedDescription)")
         }
     }
     
     func searchPokemon(text:String) async {
+        
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return }
+        
         var newList:[PokemonModel] = []
         
         if let _ = Int(text) {
@@ -116,8 +131,15 @@ class PokemonDataManager:ObservableObject {
             let pokemonIdStr = String(format: "%04d", pokemonId)
             let link = URL(string: "https://zukan.pokemon.co.jp/detail/\(pokemonIdStr)")!
             
+            let speciesURL = URL(string:"https://pokeapi.co/api/v2/pokemon-species/\(pokemonId)")!
+            let (speciesData, _) = try await URLSession.shared.data(from: speciesURL)
+            let speciesResult = try JSONDecoder().decode(PokemonSpeciesResponse.self, from: speciesData)
+            
+            let japaneseName = speciesResult.names.first(where: { $0.language.name == "ja" })?.name ?? result.name.capitalized
+
             let newPokemon = PokemonModel(
                 name: result.name.capitalized,
+                jpName: japaneseName,
                 image: imageURL,
                 link: link,
                 pokemonId: pokemonIdStr
@@ -129,4 +151,14 @@ class PokemonDataManager:ObservableObject {
         }
     }
     
+    func showDefaultPokemons() async {
+        var newList: [PokemonModel] = []
+        
+        let randomNames = allPokemonList.shuffled().prefix(10)
+        
+        for name in randomNames {
+            await fetchPokemon(by: name, into: &newList)
+        }
+        self.pokemonList = newList
+    }
 }
