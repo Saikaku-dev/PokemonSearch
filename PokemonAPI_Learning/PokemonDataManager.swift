@@ -8,19 +8,29 @@
 import Foundation
 import Combine
 
-struct PokemonModel:Identifiable {
+class PokemonModel:Identifiable,ObservableObject {
     let id = UUID()
     let name: String
     let jpName: String
     let image: URL
     let link: URL
     let pokemonId: String
+    
+    init(name: String, jpName: String, image: URL, link: URL, pokemonId: String) {
+        self.name = name
+        self.jpName = jpName
+        self.image = image
+        self.link = link
+        self.pokemonId = pokemonId
+    }
 }
 
 @MainActor
 class PokemonDataManager:ObservableObject {
     @Published var inputName:String = ""
     var cancellables = Set<AnyCancellable>()
+    @Published var selectedPokemon: PokemonModel? = nil
+    @Published var isDetailview:Bool = false
     
     init() {
         self.addListenerToInputName()

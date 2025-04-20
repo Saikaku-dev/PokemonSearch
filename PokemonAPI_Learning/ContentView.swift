@@ -9,48 +9,52 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var vm = PokemonDataManager()
-    @State var showImageViewer = false
-    @State var selectedImageURL: URL?
     
     var body: some View {
-        VStack {
-            TextField("ポケモン名かIDを入力してください",text: $vm.inputName)
-                .padding()
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            List(vm.pokemonList) { item in
-                Link(destination: item.link) {
-                    HStack {
-                        AsyncImage(url: item.image) { image in
-                            Button(action: {
-                                selectedImageURL = item.image
-                                showImageViewer = true
-                            }) {
-                                ZStack(alignment: .topTrailing) {
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 100)
-                                    Image(systemName: "magnifyingglass")
-                                        .foregroundColor(.white)
-                                        .padding(4)
-                                        .background(Color.black.opacity(0.5))
-                                        .clipShape(Circle())
-                                        .offset(x: 10, y: 4)
-                                }
-                            }
-                        } placeholder: {
-                            ProgressView()
-                        }
+        NavigationStack {
+            VStack {
+                TextField("ポケモン名かIDを入力してください",text: $vm.inputName)
+                    .padding()
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                List(vm.pokemonList) { item in
+                    Button(action: {
+                        vm.selectedPokemon = item
+                        vm.isDetailview = true
+                    }) {
                         HStack {
-                            VStack(alignment: .leading) {
-                                Text(item.jpName)
-                                Text(item.name)
+                            AsyncImage(url: item.image) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100)
+                            } placeholder: {
+                                ProgressView()
                             }
-                            .foregroundColor(.black)
-                            .padding(.leading,20)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
+                            
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(item.jpName)
+                                    Text(item.name)
+                                }
+                                .fixedSize()
+                                .foregroundColor(.black)
+                                .padding(.leading,20)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .navigationDestination(isPresented: $vm.isDetailview) {
+                        if let selected = vm.selectedPokemon {
+                            PokemonDetailInfoView(pokemon: selected)
+                                .onDisappear {
+                                    vm.isDetailview = false
+                                    vm.selectedPokemon = nil
+                                }
                         }
                     }
                 }
@@ -59,19 +63,16 @@ struct ContentView: View {
                 Task {
                     await vm.loadPokemonNames()
                 }
+                print(vm.isDetailview)
             }) {
                 Text("ランダム表示(10体)")
             }
-        }
-        .fullScreenCover(isPresented: $showImageViewer) {
-            FullScreenImageViewer(imageURL: $selectedImageURL, isPresented: $showImageViewer)
         }
         .onAppear() {
             Task {
                 await vm.loadPokemonNames()
             }
         }
-        
     }
 }
 
