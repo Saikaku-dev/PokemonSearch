@@ -13,7 +13,7 @@ struct PokemonDetailInfoView: View {
     @State var selectedImageURL: URL?
     
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 15) {
             Button(action: {
                 selectedImageURL = pokemon.image
                 showImageViewer = true
@@ -36,12 +36,36 @@ struct PokemonDetailInfoView: View {
                 }
             }
             
-            Text(pokemon.jpName)
-            Text(pokemon.name)
+            HStack {
+                Text("JP")
+                    .infoTitleStyle()
+                Text(pokemon.jpName)
+                    .underline()
+            }
+            
+            HStack {
+                Text("EN")
+                    .infoTitleStyle()
+                Text(pokemon.name)
+                    .underline()
+            }
+            
+            Link(destination: pokemon.link) {
+                Text("ポケモン図鑑 →")
+            }
         }
         .fullScreenCover(isPresented: $showImageViewer) {
             FullScreenImageViewer(imageURL: $selectedImageURL, isPresented: $showImageViewer)
         }
+    }
+}
+
+extension View {
+    func infoTitleStyle() -> some View {
+        self
+            .padding()
+            .background(Color.green.opacity(0.3))
+            .cornerRadius(15)
     }
 }
 
