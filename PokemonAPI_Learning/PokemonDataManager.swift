@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import AVFoundation
 
 class PokemonModel:Identifiable,ObservableObject {
     let id = UUID()
@@ -15,13 +16,15 @@ class PokemonModel:Identifiable,ObservableObject {
     let image: URL
     let link: URL
     let pokemonId: String
+    let soundURL: URL
     
-    init(name: String, jpName: String, image: URL, link: URL, pokemonId: String) {
+    init(name: String, jpName: String, image: URL, link: URL, pokemonId: String, soundURL: URL) {
         self.name = name
         self.jpName = jpName
         self.image = image
         self.link = link
         self.pokemonId = pokemonId
+        self.soundURL = soundURL
     }
 }
 
@@ -31,6 +34,10 @@ class PokemonDataManager:ObservableObject {
     var cancellables = Set<AnyCancellable>()
     @Published var selectedPokemon: PokemonModel? = nil
     @Published var isDetailview:Bool = false
+    @Published var pokemonList: [PokemonModel] = []
+    @Published var allPokemonList: [String] = []
+    
+    var player: AVPlayer?
     
     init() {
         self.addListenerToInputName()
@@ -56,9 +63,6 @@ class PokemonDataManager:ObservableObject {
         cancellables.forEach{ $0.cancel() }
         cancellables.removeAll()
     }
-    
-    @Published var pokemonList: [PokemonModel] = []
-    @Published var allPokemonList: [String] = []
     
     struct PokemonListResponse:Codable {
         struct Entry: Codable {
@@ -144,15 +148,19 @@ class PokemonDataManager:ObservableObject {
             let speciesURL = URL(string:"https://pokeapi.co/api/v2/pokemon-species/\(pokemonId)")!
             let (speciesData, _) = try await URLSession.shared.data(from: speciesURL)
             let speciesResult = try JSONDecoder().decode(PokemonSpeciesResponse.self, from: speciesData)
-            
             let japaneseName = speciesResult.names.first(where: { $0.language.name == "ja" })?.name ?? result.name.capitalized
+            
+            let cryURL = URL(string: "https://play.pokemonshowdown.com/audio/cries/\(result.name.lowercased()).mp3")!
 
+            
+            
             let newPokemon = PokemonModel(
                 name: result.name.capitalized,
                 jpName: japaneseName,
                 image: imageURL,
                 link: link,
-                pokemonId: pokemonIdStr
+                pokemonId: pokemonIdStr,
+                soundURL: cryURL
             )
             
             list.append(newPokemon)
@@ -170,5 +178,10 @@ class PokemonDataManager:ObservableObject {
             await fetchPokemon(by: name, into: &newList)
         }
         self.pokemonList = newList
+    }
+    
+    func playSound(from url: URL) {
+        player = AVPlayer(url: url)
+        player?.play()
     }
 }

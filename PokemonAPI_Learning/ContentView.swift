@@ -50,7 +50,7 @@ struct ContentView: View {
                     }
                     .navigationDestination(isPresented: $vm.isDetailview) {
                         if let selected = vm.selectedPokemon {
-                            PokemonDetailInfoView(pokemon: selected)
+                            PokemonDetailInfoView(pokemon: selected, vm: vm)
                                 .onDisappear {
                                     vm.isDetailview = false
                                     vm.selectedPokemon = nil

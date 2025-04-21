@@ -11,6 +11,7 @@ struct PokemonDetailInfoView: View {
     @ObservedObject var pokemon: PokemonModel
     @State var showImageViewer = false
     @State var selectedImageURL: URL?
+    @ObservedObject var vm: PokemonDataManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -36,18 +37,23 @@ struct PokemonDetailInfoView: View {
                 }
             }
             
+            Button {
+                vm.playSound(from: pokemon.soundURL)
+            } label: {
+                Image(systemName: "speaker.wave.2")
+            }
+
+            
             HStack {
-                Text("JP")
+                Text("日本語:")
                     .infoTitleStyle()
                 Text(pokemon.jpName)
-                    .underline()
             }
             
             HStack {
-                Text("EN")
+                Text("English:")
                     .infoTitleStyle()
                 Text(pokemon.name)
-                    .underline()
             }
             
             Link(destination: pokemon.link) {
@@ -63,7 +69,7 @@ struct PokemonDetailInfoView: View {
 extension View {
     func infoTitleStyle() -> some View {
         self
-            .padding()
+            .padding(.horizontal)
             .background(Color.green.opacity(0.3))
             .cornerRadius(15)
     }
@@ -75,6 +81,7 @@ extension View {
         jpName: "ピカチュウ",
         image: URL(string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png")!,
         link: URL(string: "https://www.pokemon.com/us/pokedex/pikachu")!,
-        pokemonId: "25"
-    ))
+        pokemonId: "25",
+        soundURL: URL(string: "https://play.pokemonshowdown.com/audio/cries/pikachu.mp3")!
+    ), vm: PokemonDataManager())
 }
